@@ -9,7 +9,6 @@ import (
 	"unicode"
 )
 
-//Comment ErrInvalidString
 var ErrInvalidString = errors.New("invalid string")
 
 func CheckString(source string) bool {
@@ -29,16 +28,10 @@ func translateString(source string) (string, error) {
 	}
 	for _, r := range source {
 		var localbuilder strings.Builder
-		_, err := localbuilder.WriteRune(r)
-		if err != nil {
-			return "", err
-		}
+		localbuilder.WriteRune(r)
 		if escapeSymbol {
 			escapeSymbol = false
-			_, err = resultString.WriteRune(r)
-			if err != nil {
-				return "", err
-			}
+			resultString.WriteRune(r)
 			lastSymbol = r
 			continue
 		}
@@ -46,26 +39,18 @@ func translateString(source string) (string, error) {
 			escapeSymbol = true
 			continue
 		}
-		if unicode.IsDigit(r) {
+		isdigit := unicode.IsDigit(r)
+		if isdigit {
 			count, err := strconv.Atoi(localbuilder.String())
 			if err != nil {
 				return "", err
 			}
-
 			var lastSymbolBldr strings.Builder
-			_, err = lastSymbolBldr.WriteRune(lastSymbol)
-			if err != nil {
-				return "", err
-			}
-
+			lastSymbolBldr.WriteRune(lastSymbol)
 			lastSymbolStr := lastSymbolBldr.String()
 			if count > 0 {
-
 				lastUnpackString := strings.Repeat(lastSymbolStr, count-1)
-				_, err = resultString.WriteString(lastUnpackString)
-				if err != nil {
-					return "", err
-				}
+				resultString.WriteString(lastUnpackString)
 			} else {
 				lastUnpackString := resultString.String()
 				resultString.Reset()
@@ -75,7 +60,6 @@ func translateString(source string) (string, error) {
 		}
 		lastSymbol = r
 		resultString.WriteRune(r)
-
 	}
 	return resultString.String(), nil
 }
