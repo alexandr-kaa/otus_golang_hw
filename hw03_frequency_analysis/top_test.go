@@ -58,3 +58,51 @@ func TestTop10(t *testing.T) {
 		}
 	})
 }
+
+func TestSplitCount(t *testing.T) {
+	s := `раз раз раз раз раз раз раз раз раз раз
+		два два два два два два два два два
+		три три три три три три три три
+		четыре четыре четыре четыре четыре четыре четыре
+		пять пять пять пять пять пять
+		шесть шесть шесть шесть шесть
+		семь семь семь семь
+		восемь восемь восемь 
+		девять девять
+		десять десять
+		одиннадцать`
+	expected := []string{"раз", "два", "три", "четыре", "пять", "шесть", "семь", "восемь", "девять", "десять"}
+	require.ElementsMatch(t, expected, Top10(s))
+}
+
+func TestSplitToMap(t *testing.T) {
+
+	t.Run("First task", func(t *testing.T) {
+		s := "One one, ONE"
+		res, _ := splitToMap(s, `\s`)
+		keys := make([]string, 0, 3)
+		for key := range res {
+			keys = append(keys, key)
+		}
+		array := []string{"One", "one,", "ONE"}
+		require.ElementsMatch(t, array, keys)
+	})
+
+	t.Run("Split empty str", func(t *testing.T) {
+		s := ""
+		_, err := splitToMap(s, "")
+		require.Error(t, err)
+	})
+
+}
+
+func TestSplitAdvToMap(t *testing.T) {
+	s := "One one 'one' one, one! two"
+	array := []string{"One", "two"}
+	res, _ := splitAdvToMap(s, `\s`)
+	keys := make([]string, 0, 3)
+	for key := range res {
+		keys = append(keys, key)
+	}
+	require.ElementsMatch(t, array, keys)
+}
