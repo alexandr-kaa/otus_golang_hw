@@ -7,7 +7,7 @@ import (
 )
 
 // Change to true if needed
-var taskWithAsteriskIsCompleted = false
+var taskWithAsteriskIsCompleted = true
 
 var text = `Как видите, он  спускается  по  лестнице  вслед  за  своим
 	другом   Кристофером   Робином,   головой   вниз,  пересчитывая
@@ -50,7 +50,7 @@ func TestTop10(t *testing.T) {
 
 	t.Run("positive test", func(t *testing.T) {
 		if taskWithAsteriskIsCompleted {
-			expected := []string{"он", "а", "и", "что", "ты", "не", "если", "то", "его", "кристофер", "робин", "в"}
+			expected := []string{"он", "а", "и", "что", "ты", "не", "если", "то", "его", "Кристофер", "Робин", "в"}
 			require.Subset(t, expected, Top10(text))
 		} else {
 			expected := []string{"он", "и", "а", "что", "ты", "не", "если", "-", "то", "Кристофер"}
@@ -97,12 +97,34 @@ func TestSplitToMap(t *testing.T) {
 }
 
 func TestSplitAdvToMap(t *testing.T) {
-	s := "One one 'one' one, one! two"
-	array := []string{"One", "two"}
+	s := "One one 'one' one, one! two ones Кристофер Кристофером"
+	array := []string{"One", "two", "ones", "Кристофер", "Кристофером"}
 	res, _ := splitAdvToMap(s, `\s`)
 	keys := make([]string, 0, 3)
 	for key := range res {
 		keys = append(keys, key)
 	}
 	require.ElementsMatch(t, array, keys)
+}
+
+func TestAnalyzeWord(t *testing.T) {
+	list := []string{"Jhon", "Bill", "carry"}
+	word := "jhon"
+	array, retw, _ := analyzeWord(list, word)
+	t.Run("Find existing", func(t *testing.T) {
+		require.ElementsMatch(t, list, array)
+		require.Equal(t, "Jhon", retw)
+	})
+
+	t.Run("Append new name", func(t *testing.T) {
+		array, retw, _ = analyzeWord(list, "Larry")
+		list = append(list, "Larry")
+		require.ElementsMatch(t, list, array)
+		require.Equal(t, "Larry", retw)
+	})
+
+	t.Run("Try empty string", func(t *testing.T) {
+		_, _, err := analyzeWord(list, "")
+		require.Error(t, err)
+	})
 }

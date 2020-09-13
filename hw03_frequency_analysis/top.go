@@ -19,7 +19,7 @@ func New(text string) error {
 
 func splitToMap(str string, regstr string) (map[string]int32, error) {
 	if len(str) == 0 {
-		err := errors.New("")
+		err := errors.New("empty string passed")
 		return nil, err
 	}
 	var s = make(map[string]int32)
@@ -32,19 +32,54 @@ func splitToMap(str string, regstr string) (map[string]int32, error) {
 	}
 	return s, nil
 }
+
+func analyzeWord(list []string, word string) ([]string, string, error) {
+	if word == "" {
+		err := errors.New("empty string passed")
+		return list, word, err
+	}
+	reg := regexp.MustCompile("(?i)^" + word + "$")
+	var match = ""
+	for _, wrd := range list {
+		if reg.MatchString(wrd) {
+			match = wrd
+			break
+		}
+	}
+	if len(match) > 0 {
+		return list, match, nil
+	}
+	list = append(list, word)
+
+	return list, word, nil
+}
+
 func splitAdvToMap(str string, regstr string) (map[string]int32, error) {
 	if len(str) == 0 {
-		err := errors.New("")
+		err := errors.New("empty string passed")
 		return nil, err
 	}
 	var s = make(map[string]int32)
+	var strlist = make([]string, 0)
 	reg := regexp.MustCompile(regstr)
 	words := reg.Split(str, -1)
 	for _, word := range words {
-		if len(word) > 0 {
-			s[word]++
+		if len(word) > 0 && word != "-" {
+			reg = regexp.MustCompile(`((\w|[а-яА-Я])(\w|-|[а-яА-Я])*)`)
+			ok := reg.MatchString(word)
+			if ok {
+				fs := reg.FindString(word)
+				var err error
+				var findw string
+				strlist, findw, err = analyzeWord(strlist, fs)
+				if err != nil {
+					return nil, err
+				}
+				s[findw]++
+			}
 		}
 	}
+
 	return s, nil
 }
 
@@ -70,7 +105,14 @@ func Result1(mapin map[string]int32) []string {
 }
 
 func Top10(instring string) []string {
-	res, err := splitToMap(instring, `\s`)
+	var taskWithAsteriskIsCompleted = true
+	var res map[string]int32
+	var err error
+	if taskWithAsteriskIsCompleted {
+		res, err = splitAdvToMap(instring, `\s`)
+	} else {
+		res, err = splitToMap(instring, `\s`)
+	}
 	if err == nil {
 		return Result1(res)
 	}
