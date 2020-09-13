@@ -116,6 +116,5 @@ func Top10(instring string) []string {
 	if err == nil {
 		return Result1(res)
 	}
-	//log.Fatalf("Error occurred!!!")
 	return nil
 }
