@@ -30,12 +30,12 @@ func (cache *lruCache) Set(key Key, value interface{}) bool {
 	newItem := cacheItem{value: value, key: key, count: 0}
 	front := cache.queue.PushFront(newItem)
 	cache.items[key] = front
-	//элемент key должен остаться
+	// элемент key должен остаться
 	cache.checkAndDelete(key)
 	return false
 }
 
-//Удаляем из map и queue лишний элемент с наименьшей частотой использования.
+// Удаляем из map и queue лишний элемент с наименьшей частотой использования.
 func (cache *lruCache) checkAndDelete(keyexternal Key) {
 	values := make([]cacheItem, 0)
 	for key, value := range cache.items {
@@ -74,7 +74,7 @@ type cacheItem struct {
 	// Place your code here
 	value interface{}
 	key   Key
-	//для подсчета частоты ссылок
+	// для подсчета частоты ссылок
 	count int
 }
 
