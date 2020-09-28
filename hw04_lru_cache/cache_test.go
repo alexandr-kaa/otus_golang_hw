@@ -54,6 +54,55 @@ func TestCache(t *testing.T) {
 	})
 }
 
+func TestSeveralPass(t *testing.T) {
+	t.Run("add 4 time on capacity 3", func(t *testing.T) {
+		c := NewCache(3)
+
+		wasInCache := c.Set("aaa", 100)
+		require.False(t, wasInCache)
+
+		wasInCache = c.Set("bbb", 200)
+		require.False(t, wasInCache)
+
+		wasInCache = c.Set("ccc", 300)
+		require.False(t, wasInCache)
+
+		wasInCache = c.Set("ddd", 400)
+		require.False(t, wasInCache)
+
+		val, ok := c.Get("ddd")
+		require.Equal(t, 400, val)
+
+		val, ok = c.Get("aaa")
+		require.False(t, ok)
+	})
+}
+
+func TestFrequencySeveralPass(t *testing.T) {
+	t.Run("add 4 time on capacity 3", func(t *testing.T) {
+		c := NewCache(3)
+
+		for i := 0; i < 50; i++ {
+			_ = c.Set("aaa", 100)
+		}
+
+		wasInCache := c.Set("bbb", 200)
+		require.False(t, wasInCache)
+		for i := 0; i < 35; i++ {
+			wasInCache = c.Set("ccc", 300)
+		}
+
+		wasInCache = c.Set("ddd", 400)
+		require.False(t, wasInCache)
+
+		val, ok := c.Get("ddd")
+		require.Equal(t, 400, val)
+
+		val, ok = c.Get("bbb")
+		require.False(t, ok)
+	})
+}
+
 func TestCacheMultithreading(t *testing.T) {
 	t.Skip() // Remove if task with asterisk completed
 
