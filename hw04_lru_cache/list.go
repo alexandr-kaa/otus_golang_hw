@@ -116,7 +116,7 @@ func Check(l List, r []int) bool {
 		if i.Value.(int) != r[count] {
 			return false
 		}
-		count = count + 1
+		count++
 	}
 
 	return count == l.Len()-1

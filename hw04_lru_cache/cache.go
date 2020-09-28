@@ -19,7 +19,7 @@ type lruCache struct {
 func (cache *lruCache) Set(key Key, value interface{}) bool {
 	if valueMap, ok := cache.items[key]; ok {
 		if cacheItemvalue, okTransform := valueMap.Value.(cacheItem); okTransform {
-			cacheItemvalue.count = cacheItemvalue.count + 1
+			cacheItemvalue.count++
 			cacheItemvalue.value = value
 			valueMap.Value = cacheItemvalue
 			cache.queue.MoveToFront(valueMap)
@@ -35,7 +35,7 @@ func (cache *lruCache) Set(key Key, value interface{}) bool {
 	return false
 }
 
-//Удаляем из map и queu лишний элемент с наименьшей частотой использования
+//Удаляем из map и queue лишний элемент с наименьшей частотой использования.
 func (cache *lruCache) checkAndDelete(keyexternal Key) {
 	values := make([]cacheItem, 0)
 	for key, value := range cache.items {
@@ -56,7 +56,7 @@ func (cache *lruCache) Get(key Key) (interface{}, bool) {
 	if valueMap, ok := cache.items[key]; ok {
 		cache.queue.MoveToFront(valueMap)
 		if cacheItemvalue, okTransform := valueMap.Value.(cacheItem); okTransform {
-			cacheItemvalue.count = cacheItemvalue.count + 1
+			cacheItemvalue.count++
 			valueMap.Value = cacheItemvalue
 			return cacheItemvalue.value, true
 		}
@@ -68,7 +68,6 @@ func (cache *lruCache) Clear() {
 	for key := range cache.items {
 		cache.queue.Remove(cache.items[key])
 	}
-
 }
 
 type cacheItem struct {
@@ -78,9 +77,7 @@ type cacheItem struct {
 	//для подсчета частоты ссылок
 	count int
 }
-type listItemPointer *listItem
 
 func NewCache(capa int) Cache {
-
 	return &lruCache{capacity: capa, queue: NewList(), items: make(map[Key]*listItem)}
 }
