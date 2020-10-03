@@ -6,6 +6,7 @@ import (
 	"sync"
 	"testing"
 
+	"github.com/golang/mock/gomock"
 	"github.com/stretchr/testify/require"
 )
 
@@ -88,8 +89,14 @@ func TestFrequencySeveralPass(t *testing.T) {
 
 		wasInCache := c.Set("bbb", 200)
 		require.False(t, wasInCache)
+
 		for i := 0; i < 35; i++ {
 			wasInCache = c.Set("ccc", 300)
+		}
+
+		for i := 0; i < 30; i++ {
+			_ = c.Set("aaa", 1000)
+			_, _ = c.Get("bbb")
 		}
 
 		wasInCache = c.Set("ddd", 400)
@@ -98,9 +105,40 @@ func TestFrequencySeveralPass(t *testing.T) {
 		val, ok := c.Get("ddd")
 		require.Equal(t, 400, val)
 
-		val, ok = c.Get("bbb")
+		val, ok = c.Get("ccc")
 		require.False(t, ok)
 	})
+}
+
+func TestMockMoveFront(t *testing.T) {
+	mockctl := gomock.NewController(t)
+	defer mockctl.Finish()
+
+	listmock := NewMockList(mockctl)
+
+	cache := &lruCache{capacity: 3, queue: listmock, items: make(map[Key]*listItem)}
+
+	listmock.EXPECT().Len().Return(0)
+	listmock.EXPECT().PushFront(cacheItem{key: "aaa", value: 100})
+
+	wasInCache := cache.Set("aaa", 100)
+
+	require.False(t, wasInCache)
+
+	listmock.EXPECT().Len().Return(1)
+	listmock.EXPECT().PushFront(cacheItem{key: "bbb", value: 200})
+
+	wasInCache = cache.Set("bbb", 200)
+
+	//listmock.EXPECT().MoveToFront(cacheItem{})
+
+	listmock.EXPECT().Back()
+	itemList := listmock.Back()
+
+	listmock.EXPECT().MoveToFront(itemList)
+	item, _ := cache.Get("aaa")
+
+	require.Equal(t, nil, item)
 }
 
 func TestCacheMultithreading(t *testing.T) {

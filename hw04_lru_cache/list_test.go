@@ -66,6 +66,54 @@ func TestDeleteAllList(t *testing.T) {
 	t.Run("remove empty container", func(t *testing.T) {
 		l := NewList()
 		l.Remove(nil)
+		require.Equal(t, 0, l.Len())
+	})
+}
+
+func TestRemoveHeadTail(t *testing.T) {
+	t.Run("remove last item from list", func(t *testing.T) {
+		l := NewList()
+		for i := 0; i < 10; i++ {
+			l.PushBack(i)
+		}
+		require.True(t, Check(l, []int{0, 1, 2, 3, 4, 5, 6, 7, 8, 9}))
+
+		require.Equal(t, l.Back().Value, 9)
+
+		l.Remove(l.Back())
+
+		require.Equal(t, l.Back().Value, 8)
+	})
+
+	t.Run("remove head item from list", func(t *testing.T) {
+		l := NewList()
+		for i := 0; i < 10; i++ {
+			l.PushBack(i)
+		}
+
+		require.True(t, Check(l, []int{0, 1, 2, 3, 4, 5, 6, 7, 8, 9}))
+
+		require.Equal(t, l.Front().Value, 0)
+
+		l.Remove(l.Front())
+
+		require.Equal(t, l.Front().Value, 1)
+
+	})
+
+	t.Run("move to front tail and test back", func(t *testing.T) {
+		l := NewList()
+		for i := 0; i < 10; i++ {
+			l.PushBack(i)
+		}
+
+		require.True(t, Check(l, []int{0, 1, 2, 3, 4, 5, 6, 7, 8, 9}))
+
+		l.MoveToFront(l.Back())
+
+		require.Equal(t, 9, l.Front().Value)
+
+		require.Equal(t, 8, l.Back().Value)
 
 	})
 }

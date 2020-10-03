@@ -1,5 +1,5 @@
 package hw04_lru_cache //nolint:golint,stylecheck
-
+//go:generate mockgen -destination=list_mock.go -package=hw04_lru_cache . List
 type List interface {
 	Len() int
 	Front() *listItem
@@ -33,24 +33,23 @@ func (plist *list) Len() int {
 
 func (plist *list) Front() *listItem {
 	if plist == nil {
-		return nil
+		plist = &list{}
 	}
 	return plist.begin
 }
 
 func (plist *list) Back() *listItem {
 	if plist == nil {
-		return nil
+		plist = &list{}
 	}
 	return plist.end
 }
 
 func (plist *list) PushFront(v interface{}) *listItem {
 	if plist == nil {
-		return nil
+		plist = &list{}
 	}
-	item := new(listItem)
-	*item = listItem{Prev: nil, Next: plist.begin, Value: v}
+	item := &listItem{Prev: nil, Next: plist.begin, Value: v}
 	if plist.count == 0 {
 		plist.end = item
 	} else {
@@ -63,10 +62,9 @@ func (plist *list) PushFront(v interface{}) *listItem {
 
 func (plist *list) PushBack(v interface{}) *listItem {
 	if plist == nil {
-		return nil
+		plist = &list{}
 	}
-	item := new(listItem)
-	*item = listItem{Prev: plist.end, Next: nil, Value: v}
+	item := &listItem{Prev: plist.end, Next: nil, Value: v}
 	if plist.count == 0 {
 		plist.begin = item
 	} else {
@@ -77,35 +75,45 @@ func (plist *list) PushBack(v interface{}) *listItem {
 	return plist.end
 }
 
-func (plist *list) Remove(pointer *listItem) {
-	if pointer == nil {
+func (plist *list) Remove(plistItem *listItem) {
+	if plistItem == nil {
 		return
 	}
 	if plist == nil {
 		return
 	}
 
-	if plist.begin == pointer {
-		plist.begin = pointer.Next
+	if plist.begin == plistItem {
+		plist.begin = plistItem.Next
+		plist.begin.Prev = nil
+		plist.count--
+		return
 	}
-	if plist.end == pointer {
-		plist.end = pointer.Prev
+	if plist.end == plistItem {
+		plist.end = plistItem.Prev
+		plist.end.Next = nil
+		plist.count--
+		return
 	}
 	if plist.begin != nil && plist.end != nil {
-		pointer.Prev.Next = pointer.Next
+		plistItem.Prev.Next = plistItem.Next
 	}
 	plist.count--
 }
 
-func (plist *list) MoveToFront(pointer *listItem) {
-	if pointer == nil || pointer == plist.Front() {
+func (plist *list) MoveToFront(plistItem *listItem) {
+	if plistItem == nil || plistItem == plist.Front() {
 		return
 	}
-	pointer.Prev.Next = pointer.Next
-	pointer.Next = plist.begin
-	plist.begin.Prev = pointer
-	pointer.Prev = nil
-	plist.begin = pointer
+	if plist.end == plistItem {
+		plist.end = plist.end.Prev
+	}
+
+	plistItem.Prev.Next = plistItem.Next
+	plistItem.Next = plist.begin
+	plist.begin.Prev = plistItem
+	plistItem.Prev = nil
+	plist.begin = plistItem
 }
 func Check(l List, r []int) bool {
 	if l.Len() != len(r) {
@@ -119,7 +127,7 @@ func Check(l List, r []int) bool {
 		count++
 	}
 
-	return count == l.Len()-1
+	return count == l.Len()
 }
 func NewList() List {
 	return &list{}
