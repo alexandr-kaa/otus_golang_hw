@@ -65,7 +65,7 @@ func (cache *lruCache) checkAndDelete(keyexternal Key) {
 func (cache *lruCache) Get(key Key) (interface{}, bool) {
 	if valueMap, ok := cache.items[key]; ok {
 		cache.queue.MoveToFront(valueMap)
-		//Нужен для mock теста
+		// Нужен для mock теста
 		if valueMap == nil {
 			return nil, true
 		}
