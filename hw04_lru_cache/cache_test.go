@@ -141,6 +141,21 @@ func TestMockMoveFront(t *testing.T) {
 	require.Equal(t, nil, item)
 }
 
+func TestNewCacheWithOptions(t *testing.T) {
+	listDefault := NewList()
+	first := cacheItem{key: "aaa", value: 100}
+	listDefault.PushBack(first)
+	listDefault.PushBack(cacheItem{key: "bbb", value: 200})
+
+	_, ok := listDefault.Front().Value.(cacheItem)
+
+	require.True(t, ok)
+
+	cache := NewCache(3, SetList(listDefault))
+	item, _ := cache.Get("aaa")
+	require.Equal(t, first.value, item)
+}
+
 func TestCacheMultithreading(t *testing.T) {
 	t.Skip() // Remove if task with asterisk completed
 

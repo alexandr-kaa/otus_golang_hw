@@ -79,10 +79,10 @@ func (cache *lruCache) Get(key Key) (interface{}, bool) {
 }
 
 func (cache *lruCache) Clear() {
-	for key := range cache.items {
-		cache.queue.Remove(cache.items[key])
+	if cache == nil {
+		return
 	}
-	cache.queue = NewList()
+	cache = &lruCache{capacity: cache.capacity, queue: NewList(), items: make(map[Key]*listItem)}
 }
 
 type cacheItem struct {
@@ -91,24 +91,39 @@ type cacheItem struct {
 	key   Key
 }
 
-func NewCache(capa int) Cache {
-	return &lruCache{capacity: capa, queue: NewList(), items: make(map[Key]*listItem)}
+// Попытка сделать опции
+
+type Option func(*lruCache)
+
+func SetList(inlist List) Option {
+	return func(cache *lruCache) {
+		if _, ok := inlist.Front().Value.(cacheItem); !ok {
+			panic("wrong data type")
+		}
+
+		for cache.capacity < inlist.Len() {
+			inlist.Remove(inlist.Back())
+		}
+
+		mapData := make(map[Key]*listItem)
+
+		for i := inlist.Front(); i != nil; i = i.Next {
+			if _, ok := i.Value.(cacheItem); ok {
+				mapData[i.Value.(cacheItem).key] = i
+			} else {
+				panic("Wrong Data Type !!!")
+			}
+		}
+
+		cache.queue = inlist
+		cache.items = mapData
+	}
 }
 
-func NewCacheExistingList(cap int, inlist List) Cache {
-	mapData := make(map[Key]*listItem)
-
-	if _, ok := inlist.Front().Value.(cacheItem); !ok {
-		panic("wrong data type")
+func NewCache(capa int, setters ...Option) Cache {
+	lru := lruCache{capacity: capa, queue: NewList(), items: make(map[Key]*listItem)}
+	for _, setter := range setters {
+		setter(&lru)
 	}
-
-	for cap < inlist.Len() {
-		inlist.Remove(inlist.Back())
-	}
-
-	for i := inlist.Front(); i != nil; i = i.Next {
-		mapData[i.Value.(cacheItem).key] = i
-	}
-
-	return &lruCache{capacity: cap, queue: inlist, items: mapData}
+	return &lru
 }

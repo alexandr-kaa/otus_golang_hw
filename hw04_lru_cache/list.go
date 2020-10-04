@@ -26,14 +26,14 @@ type list struct {
 
 func (plist *list) Len() int {
 	if plist == nil {
-		return -1
+		return 0
 	}
 	return plist.count
 }
 
 func (plist *list) Front() *listItem {
 	if plist == nil {
-		plist = &list{}
+		plist = new(list)
 	}
 	return plist.begin
 }
