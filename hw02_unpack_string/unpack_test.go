@@ -1,4 +1,5 @@
 package hw02_unpack_string //nolint:golint,stylecheck
+//package main
 
 import (
 	"testing"
@@ -53,7 +54,7 @@ func TestUnpack(t *testing.T) {
 }
 
 func TestUnpackWithEscape(t *testing.T) {
-	t.Skip() // Remove if task with asterisk completed
+	//t.Skip() // Remove if task with asterisk completed
 
 	for _, tst := range [...]test{
 		{
@@ -76,5 +77,54 @@ func TestUnpackWithEscape(t *testing.T) {
 		result, err := Unpack(tst.input)
 		require.Equal(t, tst.err, err)
 		require.Equal(t, tst.expected, result)
+	}
+}
+
+func TestTranslateString(t *testing.T) {
+	testSource := []struct {
+		source   string
+		expected string
+	}{
+		{`a4c`, `aaaac`},
+		{`a\\b\5`, `a\b5`},
+		{`\\5`, `\\\\\`},
+		{`абв`, `абв`},
+		{`зздд4`, `ззддддд`},
+		{"as\n5", "as\n\n\n\n\n"},
+	}
+	for _, tc := range testSource {
+		tc := tc
+		t.Run(tc.source, func(t *testing.T) {
+			got, err := translateString(tc.source)
+			require.NoError(t, err)
+			require.Equal(t, tc.expected, got)
+		})
+	}
+
+}
+
+func TestCheckString(t *testing.T) {
+	testSource := []struct {
+		source  string
+		matched bool
+	}{
+		{`1s`, false},
+		{`s1`, true},
+		{`\\\`, false},
+		{`\55d`, true},
+		{`  a`, true},
+		{`s2\\2\3\\5`, true},
+		{`asd{}`, false},
+		{`a\\\n5`, false},
+		{`\\\\\\\\\\`, true},
+		{`    5`, true},
+		{"as\n5", true},
+	}
+	for _, tc := range testSource {
+		tc := tc
+		t.Run(tc.source, func(t *testing.T) {
+			got := CheckString(tc.source)
+			require.Equal(t, tc.matched, got)
+		})
 	}
 }
