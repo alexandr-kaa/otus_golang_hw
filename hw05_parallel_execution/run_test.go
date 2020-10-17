@@ -66,8 +66,8 @@ func TestRun(t *testing.T) {
 		require.Equal(t, runTasksCount, int32(tasksCount), "not all tasks were completed")
 		require.LessOrEqual(t, int64(elapsedTime), int64(sumTime/2), "tasks were run sequentially?")
 	})
-	t.Run("tasks with 0 errors - ignore all errors", func(t *testing.T){
-	    	tasksCount:= 20
+	t.Run("tasks with 0 errors - ignore all errors", func(t *testing.T) {
+		tasksCount := 20
 		tasks := make([]Task, 0, tasksCount)
 
 		var runTasksCount int32
@@ -84,9 +84,8 @@ func TestRun(t *testing.T) {
 		workersCount := 10
 		maxErrorsCount := 0
 		result := Run(tasks, workersCount, maxErrorsCount)
-                fmt.Printf("RunTasksCount %d\n",runTasksCount)
 		require.Nil(t, result)
 		require.LessOrEqual(t, runTasksCount, int32(tasksCount), "extra tasks were started")
-	   
+
 	})
 }
