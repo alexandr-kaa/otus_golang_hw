@@ -15,55 +15,51 @@ type Data struct {
 	localLock         *sync.RWMutex
 	N                 int
 	M                 int
-	currentErrorCount *int
+	currentErrorCount *int32
+	number            int
 }
 
-func worker(data Data, chanTask <-chan Task, done <-chan struct{}) {
+func worker(data Data, chanTask <-chan Task) {
 	defer data.pWaitGr.Done()
 	for {
-		select {
-		case <-done:
-			return
-		default:
-			{
-			}
-		}
+
 		data.localLock.RLock()
-		if data.M > 0 && *data.currentErrorCount > data.M-1 {
+		if data.M > 0 && int(*data.currentErrorCount) > data.M-1 {
 			data.localLock.RUnlock()
 			return
 		}
 		data.localLock.RUnlock()
 		select {
-		case task := <-chanTask:
-			err := task()
-			if err != nil {
-				data.localLock.Lock()
-				*data.currentErrorCount++
-				data.localLock.Unlock()
+		case task, ok := <-chanTask:
+			if !ok {
+				return
 			}
-		default:
-			return
+			err := task()
+			data.localLock.Lock()
+			if err != nil {
+				(*data.currentErrorCount)++
+			}
+			data.localLock.Unlock()
 		}
 	}
 }
-func Run(tasks []Task, N int, M int) error {
+func Run(tasks []Task, n int, m int) error {
 	// Place your code here
-	var currentErrorCount int
+	var currentErrorCount int32
 	chanTask := make(chan Task, len(tasks))
-	done := make(chan struct{}, 1)
+
 	var waitGr sync.WaitGroup
 
 	var localLock sync.RWMutex
-	data := Data{&waitGr, &localLock, N, M, &currentErrorCount}
+	data := Data{&waitGr, &localLock, n, m, &currentErrorCount, 0}
 	for i := 0; i < data.N; i++ {
 		waitGr.Add(1)
-		go worker(data, chanTask, done)
+		data.number = i
+		go worker(data, chanTask)
 	}
 	for _, task := range tasks {
 		localLock.RLock()
-		if M > 0 && currentErrorCount > M-1 {
-			close(done)
+		if m > 0 && int(currentErrorCount) > m-1 {
 			close(chanTask)
 			localLock.RUnlock()
 			waitGr.Wait()
@@ -72,8 +68,9 @@ func Run(tasks []Task, N int, M int) error {
 		localLock.RUnlock()
 		chanTask <- task
 	}
+	close(chanTask)
 	waitGr.Wait()
-	if M > 0 && currentErrorCount > M-1 {
+	if m > 0 && int(currentErrorCount) > m-1 {
 		return ErrErrorsLimitExceeded
 	}
 	return nil
