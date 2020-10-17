@@ -22,25 +22,22 @@ type Data struct {
 func worker(data Data, chanTask <-chan Task) {
 	defer data.pWaitGr.Done()
 	for {
-
 		data.localLock.RLock()
 		if data.M > 0 && int(*data.currentErrorCount) > data.M-1 {
 			data.localLock.RUnlock()
 			return
 		}
 		data.localLock.RUnlock()
-		select {
-		case task, ok := <-chanTask:
-			if !ok {
-				return
-			}
-			err := task()
-			data.localLock.Lock()
-			if err != nil {
-				(*data.currentErrorCount)++
-			}
-			data.localLock.Unlock()
+		task, ok := <-chanTask
+		if !ok {
+			return
 		}
+		err := task()
+		data.localLock.Lock()
+		if err != nil {
+			(*data.currentErrorCount)++
+		}
+		data.localLock.Unlock()
 	}
 }
 func Run(tasks []Task, n int, m int) error {
