@@ -13,13 +13,13 @@ type Task func() error
 func Run(tasks []Task, N int, M int) error {
 	// Place your code here 
 	var currentErrorCount int
-	chanTask := make(chan Task, len(Tasks))
+	chanTask := make(chan Task, len(tasks))
 	done:=make(chan interface{},1)
 	var waitGr sync.WaitGroup
-	waitGr.Add(N)
-	localLock:=sync.Mutex
+	var localLock sync.Mutex
 	for i:=0;i<N;i++{
-		go func(){
+        	waitGr.Add(1)
+        	go func(){
 		 defer waitGr.Done()
 		 for{
 		 select{
@@ -27,13 +27,13 @@ func Run(tasks []Task, N int, M int) error {
 		   default:{}
 		 }
 		 localLock.Lock()
-		 if currentErrorCount >M-1{
-			 localLock.Unlock()
+		 if M>0 && currentErrorCount > M-1{
+		 	 localLock.Unlock()
 			 return
 		 }
 		 localLock.Unlock()
 		 select{
-		 case task<-chanTask:
+		 case task:=<-chanTask:
 			 err:=task()
 			 if err != nil{
 			 localLock.Lock()
@@ -43,20 +43,23 @@ func Run(tasks []Task, N int, M int) error {
 	         default : return
 		 }
 	 }
-		 
 	 }()
+	 }
 	 for _,task:= range(tasks){
 		 localLock.Lock()
-		 if currentErrorCount > M-1{
+		 if M>0 && currentErrorCount > M-1{
 			 close (done)
 			 close (chanTask)
+			 localLock.Unlock()
 			 waitGr.Wait()
 			 return ErrErrorsLimitExceeded
 		 }
+		 localLock.Unlock()
 		 chanTask<-task
 	 }
-
-	}
 	waitGr.Wait()
+	if M>0 && currentErrorCount > M-1{
+	 return ErrErrorsLimitExceeded
+	}
 	return nil
 }
