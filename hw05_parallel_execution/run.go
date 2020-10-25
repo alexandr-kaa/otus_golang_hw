@@ -46,7 +46,6 @@ func worker(taskContext TaskContext) {
 		if err != nil {
 			taskContext.IncreaseCounter()
 		}
-
 	}
 }
 func Run(tasks []Task, n int, m int) error {
