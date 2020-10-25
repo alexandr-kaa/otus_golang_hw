@@ -90,4 +90,28 @@ func TestPipeline(t *testing.T) {
 		require.Len(t, result, 0)
 		require.Less(t, int64(elapsed), int64(abortDur)+int64(fault))
 	})
+
+	t.Run("TestWorkerDummy", func(t *testing.T) {
+		in := make(Bi)
+		dummy := stages[0]
+		worker := Worker{in: in, stage: dummy}
+		done := make(Bi)
+		go func() {
+			defer close(in)
+			for i := 0; i < 5; i++ {
+				in <- i
+			}
+
+		}()
+		result := 0
+		go func() {
+			defer close(done)
+			for digit := range worker.execStage(done) {
+				result += digit.(int)
+			}
+		}()
+		<-done
+		require.Equal(t, 10, result)
+
+	})
 }
