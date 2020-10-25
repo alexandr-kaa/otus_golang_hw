@@ -10,34 +10,43 @@ var ErrErrorsLimitExceeded = errors.New("errors limit exceeded")
 type Task func() error
 
 /* Run starts tasks in N goroutines and stops its work when receiving M errors from them.... */
-type Data struct {
+type TaskContext struct {
 	pWaitGr           *sync.WaitGroup
 	localLock         *sync.RWMutex
 	N                 int
 	M                 int
 	currentErrorCount *int32
-	number            int
+	number            int // Используется для отладки
+	chanTask          <-chan Task
 }
 
-func worker(data Data, chanTask <-chan Task) {
-	defer data.pWaitGr.Done()
+func (context TaskContext) ErrLimWasExceed() bool {
+	(context.localLock).RLock()
+	defer (context.localLock).RUnlock()
+	return (context.M > 0 && *context.currentErrorCount > int32(context.M-1))
+}
+
+func (context TaskContext) IncreaseCounter() {
+	context.localLock.Lock()
+	defer context.localLock.Unlock()
+	(*context.currentErrorCount)++
+}
+
+func worker(taskContext TaskContext) {
+	defer taskContext.pWaitGr.Done()
 	for {
-		data.localLock.RLock()
-		if data.M > 0 && int(*data.currentErrorCount) > data.M-1 {
-			data.localLock.RUnlock()
+		if taskContext.ErrLimWasExceed() {
 			return
 		}
-		data.localLock.RUnlock()
-		task, ok := <-chanTask
+		task, ok := <-taskContext.chanTask
 		if !ok {
 			return
 		}
 		err := task()
-		data.localLock.Lock()
 		if err != nil {
-			(*data.currentErrorCount)++
+			taskContext.IncreaseCounter()
 		}
-		data.localLock.Unlock()
+
 	}
 }
 func Run(tasks []Task, n int, m int) error {
@@ -48,21 +57,18 @@ func Run(tasks []Task, n int, m int) error {
 	var waitGr sync.WaitGroup
 
 	var localLock sync.RWMutex
-	data := Data{&waitGr, &localLock, n, m, &currentErrorCount, 0}
-	for i := 0; i < data.N; i++ {
+	taskContext := TaskContext{&waitGr, &localLock, n, m, &currentErrorCount, 0, chanTask}
+	for i := 0; i < n; i++ {
 		waitGr.Add(1)
-		data.number = i
-		go worker(data, chanTask)
+		taskContext.number = i
+		go worker(taskContext)
 	}
 	for _, task := range tasks {
-		localLock.RLock()
-		if m > 0 && int(currentErrorCount) > m-1 {
+		if taskContext.ErrLimWasExceed() {
 			close(chanTask)
-			localLock.RUnlock()
 			waitGr.Wait()
 			return ErrErrorsLimitExceeded
 		}
-		localLock.RUnlock()
 		chanTask <- task
 	}
 	close(chanTask)
