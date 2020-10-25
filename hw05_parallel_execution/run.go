@@ -56,7 +56,14 @@ func Run(tasks []Task, n int, m int) error {
 	var waitGr sync.WaitGroup
 
 	var localLock sync.RWMutex
-	taskContext := TaskContext{&waitGr, &localLock, n, m, &currentErrorCount, 0, chanTask}
+	taskContext := TaskContext{
+		pWaitGr:           &waitGr,
+		localLock:         &localLock,
+		N:                 n,
+		M:                 m,
+		currentErrorCount: &currentErrorCount,
+		number:            0,
+		chanTask:          chanTask}
 	for i := 0; i < n; i++ {
 		waitGr.Add(1)
 		taskContext.number = i
