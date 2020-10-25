@@ -106,7 +106,7 @@ func TestPipeline(t *testing.T) {
 		result := 0
 		go func() {
 			defer close(done)
-			for digit := range worker.execStage(done) {
+			for digit := range worker.execStage() {
 				result += digit.(int)
 			}
 		}()
