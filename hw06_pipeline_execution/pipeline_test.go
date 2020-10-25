@@ -98,7 +98,7 @@ func TestPipeline(t *testing.T) {
 		done := make(Bi)
 		go func() {
 			defer close(in)
-			for i := 0; i < 5; i++ {
+			for i := 0; i < 6; i++ {
 				in <- i
 			}
 
@@ -111,7 +111,7 @@ func TestPipeline(t *testing.T) {
 			}
 		}()
 		<-done
-		require.Equal(t, 10, result)
+		require.Equal(t, 15, result)
 
 	})
 }
