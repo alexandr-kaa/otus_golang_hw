@@ -10,51 +10,54 @@ type Stage func(in In) (out Out)
 
 type Worker struct {
 	in    In
+	done  In
 	stage Stage
 }
 
 func (w Worker) execStage() Out {
-	if w.in == nil {
-		return nil
-	}
-	outChan := w.stage(w.in)
-	return outChan
+	innerOut := make(Bi)
+	go func() {
+		defer close(innerOut)
+		outchan := w.stage(w.in)
+		for {
+			select {
+			case <-w.done:
+				return
+			default:
+			}
+			select {
+			case s, ok := <-outchan:
+				if !ok {
+					return
+				}
+				innerOut <- s
+			case <-w.done:
+				return
+			}
+		}
+	}()
+	return innerOut
 }
 
 func ExecutePipeline(in In, done In, stages ...Stage) Out {
 	// Place your code here
-
 	innerChannel := in
 	out := make(Bi)
+	if in == nil {
+		close(out)
+		return out
+	}
 	go func() {
 		defer close(out)
 		for _, stage := range stages {
 			actual := stage
 			worker := Worker{in: innerChannel,
+				done:  done,
 				stage: actual}
 			innerChannel = worker.execStage()
-			if innerChannel == nil {
-				return
-			}
 		}
-		for {
-			select {
-			case <-done:
-				return
-			default:
-				{
-				}
-			}
-			select {
-			case s, ok := <-innerChannel:
-				if !ok {
-					return
-				}
-				out <- s
-			default:
-				{
-				}
-			}
+		for data := range innerChannel {
+			out <- data
 		}
 	}()
 	return out
