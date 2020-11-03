@@ -91,27 +91,30 @@ func TestPipeline(t *testing.T) {
 		require.Less(t, int64(elapsed), int64(abortDur)+int64(fault))
 	})
 
-	t.Run("TestWorkerDummy", func(t *testing.T) {
-		in := make(Bi)
-		dummy := stages[0]
-		worker := Worker{in: in, stage: dummy}
-		done := make(Bi)
-		go func() {
-			defer close(in)
-			for i := 0; i < 6; i++ {
-				in <- i
-			}
+	stages = append(stages,
+		g("Atoi", func(v interface{}) interface{} { i, _ := strconv.ParseInt(v.(string), 10, 32); return int(i) }),
+		g("Minuser (- 100)", func(v interface{}) interface{} { return v.(int) - 100 }),
+		g("Devider (/ 2)", func(v interface{}) interface{} { return v.(int) >> 1 }))
 
+	t.Run("Check it!", func(t *testing.T) {
+		in := make(Bi)
+		data := []int{1, 2, 3, 4, 5}
+		done := make(Bi)
+		defer func() {
+			close(done)
 		}()
-		result := 0
 		go func() {
-			defer close(done)
-			for digit := range worker.execStage() {
-				result += digit.(int)
+			for _, v := range data {
+				in <- v
 			}
+			close(in)
 		}()
-		<-done
-		require.Equal(t, 15, result)
+
+		result := make([]int, 0, 10)
+		for s := range ExecutePipeline(in, done, stages...) {
+			result = append(result, s.(int))
+		}
+		require.Equal(t, data, result)
 
 	})
 }
