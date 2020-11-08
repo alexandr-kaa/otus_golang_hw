@@ -117,4 +117,23 @@ func TestPipeline(t *testing.T) {
 		require.Equal(t, data, result)
 
 	})
+
+	t.Run("Empty in!", func(t *testing.T) {
+		in := make(Bi)
+		data := []int{}
+		done := make(Bi)
+		abortDur := sleepPerStage * 2
+		go func() {
+			<-time.After(abortDur)
+			close(done)
+		}()
+
+		defer close(in)
+
+		result := make([]int, 0, 10)
+		for s := range ExecutePipeline(in, done, stages...) {
+			result = append(result, s.(int))
+		}
+		require.Equal(t, data, result)
+	})
 }
