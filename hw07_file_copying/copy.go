@@ -139,11 +139,11 @@ func (f copyFile) copy() error {
 		return fmt.Errorf("%w", err)
 	}
 	if _, err = reader.Seek(f.offset, io.SeekStart); err != nil {
-		return fmt.Errorf("%v", err)
+		return fmt.Errorf("%w", err)
 	}
 	fileTo, err := os.Create(f.to)
 	if err != nil {
-		return fmt.Errorf("%v", err)
+		return fmt.Errorf("%w", err)
 	}
 	go readChan(s, errChan, reader, f.length)
 	go writeChan(s, errChan, fileTo, f.bar)
