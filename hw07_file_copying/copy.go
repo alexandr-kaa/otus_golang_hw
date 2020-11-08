@@ -30,7 +30,7 @@ func createCopyFile(offset int64, len int64, fromSrc string, toDst string) (copy
 	}
 	stat, err := os.Stat(fromSrc)
 	if err != nil {
-		return nil, fmt.Errorf("%v", err)
+		return nil, fmt.Errorf("%w", err)
 	}
 	if stat.Size() == 0 {
 		return nil, fmt.Errorf("%w", ErrUnsupportedFile)
@@ -39,7 +39,7 @@ func createCopyFile(offset int64, len int64, fromSrc string, toDst string) (copy
 		return nil, fmt.Errorf("%w", ErrOffsetExceedsFileSize)
 	}
 	if err = checkEmptyName(toDst); err != nil {
-		return nil, fmt.Errorf("%v", err)
+		return nil, fmt.Errorf("%w", err)
 	}
 	if len > 0 {
 		if offset+len > stat.Size() {
@@ -136,7 +136,7 @@ func (f copyFile) copy() error {
 	}()
 	reader, err := os.Open(f.from)
 	if err != nil {
-		return fmt.Errorf("%v", err)
+		return fmt.Errorf("%w", err)
 	}
 	if _, err = reader.Seek(f.offset, io.SeekStart); err != nil {
 		return fmt.Errorf("%v", err)
@@ -164,7 +164,7 @@ func Copy(fromPath string, toPath string, offset, limit int64) error {
 		return err
 	}
 	err = file.copy()
-	return err
+	return fmt.Errorf("%w", err)
 }
 
 type progressBar struct {
