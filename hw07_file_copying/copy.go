@@ -164,7 +164,10 @@ func Copy(fromPath string, toPath string, offset, limit int64) error {
 		return err
 	}
 	err = file.copy()
-	return fmt.Errorf("%w", err)
+	if err != nil {
+		return fmt.Errorf("%w", err)
+	}
+	return nil
 }
 
 type progressBar struct {
