@@ -30,16 +30,16 @@ func createCopyFile(offset int64, len int64, fromSrc string, toDst string) (copy
 	}
 	stat, err := os.Stat(fromSrc)
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("%v", err)
 	}
 	if stat.Size() == 0 {
-		return nil, ErrUnsupportedFile
+		return nil, fmt.Errorf("%w", ErrUnsupportedFile)
 	}
 	if stat.Size() < offset {
-		return nil, ErrOffsetExceedsFileSize
+		return nil, fmt.Errorf("%w", ErrOffsetExceedsFileSize)
 	}
 	if err = checkEmptyName(toDst); err != nil {
-		return nil, err
+		return nil, fmt.Errorf("%v", err)
 	}
 	if len > 0 {
 		if offset+len > stat.Size() {
@@ -89,12 +89,12 @@ func readChan(out chan []byte, errCh chan error, reader io.Reader, len int64) {
 	for total < len {
 		buffer := make([]byte, buffSize)
 		length, err := limReader.Read(buffer)
-		if err != io.EOF && err != nil {
+		if !errors.Is(err, io.EOF) && err != nil {
 			errCh <- err
 			return
 		}
 		out <- buffer[:length]
-		if err == io.EOF {
+		if errors.Is(err, io.EOF) {
 			out <- nil
 			return
 		}
@@ -136,23 +136,25 @@ func (f copyFile) copy() error {
 	}()
 	reader, err := os.Open(f.from)
 	if err != nil {
-		return err
+		return fmt.Errorf("%v", err)
 	}
 	if _, err = reader.Seek(f.offset, io.SeekStart); err != nil {
-		return err
+		return fmt.Errorf("%v", err)
 	}
 	fileTo, err := os.Create(f.to)
 	if err != nil {
-		return err
+		return fmt.Errorf("%v", err)
 	}
 	go readChan(s, errChan, reader, f.length)
 	go writeChan(s, errChan, fileTo, f.bar)
 	errCh := <-errChan
-	if errCh == io.EOF {
-		errCh = nil
+	if errors.Is(errCh, io.EOF) {
+		return nil
 	}
-
-	return errCh
+	if errCh != nil {
+		return fmt.Errorf("%w", errCh)
+	}
+	return nil
 }
 
 func Copy(fromPath string, toPath string, offset, limit int64) error {
