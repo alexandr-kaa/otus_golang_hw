@@ -90,4 +90,50 @@ func TestPipeline(t *testing.T) {
 		require.Len(t, result, 0)
 		require.Less(t, int64(elapsed), int64(abortDur)+int64(fault))
 	})
+
+	stages = append(stages,
+		g("Atoi", func(v interface{}) interface{} { i, _ := strconv.ParseInt(v.(string), 10, 32); return int(i) }),
+		g("Minuser (- 100)", func(v interface{}) interface{} { return v.(int) - 100 }),
+		g("Devider (/ 2)", func(v interface{}) interface{} { return v.(int) >> 1 }))
+
+	t.Run("Check it!", func(t *testing.T) {
+		in := make(Bi)
+		data := []int{1, 2, 3, 4, 5}
+		done := make(Bi)
+		defer func() {
+			close(done)
+		}()
+		go func() {
+			for _, v := range data {
+				in <- v
+			}
+			close(in)
+		}()
+
+		result := make([]int, 0, 10)
+		for s := range ExecutePipeline(in, done, stages...) {
+			result = append(result, s.(int))
+		}
+		require.Equal(t, data, result)
+
+	})
+
+	t.Run("Empty in!", func(t *testing.T) {
+		in := make(Bi)
+		data := []int{}
+		done := make(Bi)
+		abortDur := sleepPerStage * 2
+		go func() {
+			<-time.After(abortDur)
+			close(done)
+		}()
+
+		defer close(in)
+
+		result := make([]int, 0, 10)
+		for s := range ExecutePipeline(in, done, stages...) {
+			result = append(result, s.(int))
+		}
+		require.Equal(t, data, result)
+	})
 }
