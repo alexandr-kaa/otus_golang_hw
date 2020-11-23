@@ -1,6 +1,7 @@
 package main
 
 import (
+	"fmt"
 	"io/ioutil"
 	"os"
 	"strings"
@@ -21,7 +22,7 @@ func ReadDir(dir string) (Environment, error) {
 	for _, fileInfo := range info {
 		key, value, err := readFile(dir, fileInfo)
 		if err != nil {
-			return nil, err
+			return nil, fmt.Errorf("ReadDir btings error %v", err)
 		}
 		retval[key] = value
 	}
@@ -32,7 +33,7 @@ func readFile(dir string, info os.FileInfo) (fileName string, value string, err 
 	fileName = info.Name()
 	content, err := ioutil.ReadFile(dir + "/" + fileName)
 	if err != nil {
-		return "", "", err
+		return "", "", fmt.Errorf("readFile get error from ioutil.ReadFile %v", err)
 	}
 	sliceByte := make([]byte, 4)
 	utf8.EncodeRune(sliceByte, '\n')
@@ -41,7 +42,7 @@ func readFile(dir string, info os.FileInfo) (fileName string, value string, err 
 
 	_, err = builder.Write(content)
 	if err != nil {
-		return "", "", err
+		return "", "", fmt.Errorf("readFile get error from string builder write method %v", err)
 	}
 
 	str := strings.Split(builder.String(), "\n")[0]
@@ -55,11 +56,11 @@ func readFile(dir string, info os.FileInfo) (fileName string, value string, err 
 			err = builder.WriteByte(byteValue)
 		}
 		if err != nil {
-			return "", "", nil
+			return "", "", fmt.Errorf("readFile get error trying write to string string builder %v", err)
 		}
 	}
 	value = builder.String()
 	value = strings.TrimRight(value, " \t")
 
-	return fileName, value, err
+	return fileName, value, nil
 }
