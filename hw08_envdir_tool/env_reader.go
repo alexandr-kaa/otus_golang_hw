@@ -22,7 +22,7 @@ func ReadDir(dir string) (Environment, error) {
 	for _, fileInfo := range info {
 		key, value, err := readFile(dir, fileInfo)
 		if err != nil {
-			return nil, fmt.Errorf("ReadDir btings error %v", err)
+			return nil, fmt.Errorf("ReadDir btings error %w", err)
 		}
 		retval[key] = value
 	}
@@ -33,7 +33,7 @@ func readFile(dir string, info os.FileInfo) (fileName string, value string, err 
 	fileName = info.Name()
 	content, err := ioutil.ReadFile(dir + "/" + fileName)
 	if err != nil {
-		return "", "", fmt.Errorf("readFile get error from ioutil.ReadFile %v", err)
+		return "", "", fmt.Errorf("readFile get error from ioutil.ReadFile %w", err)
 	}
 	sliceByte := make([]byte, 4)
 	utf8.EncodeRune(sliceByte, '\n')
@@ -42,7 +42,7 @@ func readFile(dir string, info os.FileInfo) (fileName string, value string, err 
 
 	_, err = builder.Write(content)
 	if err != nil {
-		return "", "", fmt.Errorf("readFile get error from string builder write method %v", err)
+		return "", "", fmt.Errorf("readFile get error from string builder write method %w", err)
 	}
 
 	str := strings.Split(builder.String(), "\n")[0]
@@ -56,7 +56,7 @@ func readFile(dir string, info os.FileInfo) (fileName string, value string, err 
 			err = builder.WriteByte(byteValue)
 		}
 		if err != nil {
-			return "", "", fmt.Errorf("readFile get error trying write to string string builder %v", err)
+			return "", "", fmt.Errorf("readFile get error trying write to string string builder %w", err)
 		}
 	}
 	value = builder.String()
