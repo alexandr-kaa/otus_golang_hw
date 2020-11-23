@@ -17,12 +17,12 @@ func ReadDir(dir string) (Environment, error) {
 	retval := make(Environment)
 	info, err := ioutil.ReadDir(dir)
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("ReadDir get error from ioutil.ReadDir %w", err)
 	}
 	for _, fileInfo := range info {
 		key, value, err := readFile(dir, fileInfo)
 		if err != nil {
-			return nil, fmt.Errorf("ReadDir btings error %w", err)
+			return nil, fmt.Errorf("ReadDir brings error %w", err)
 		}
 		retval[key] = value
 	}
