@@ -36,7 +36,7 @@ func ReadDir(dir string) (Environment, error) {
 		}
 		key, value, err := readFile(dir, fileInfo)
 		if err != nil {
-			return nil, fmt.Errorf("ReadDir brings error %v", err)
+			return nil, fmt.Errorf("ReadDir brings error %w", err)
 		}
 		retval[key] = value
 	}
