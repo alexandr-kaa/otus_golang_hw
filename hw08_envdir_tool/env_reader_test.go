@@ -17,33 +17,49 @@ func TestReadFile(t *testing.T) {
 	t.Run("readFileBAR", func(t *testing.T) {
 		info, err := os.Stat("./testdata/env/BAR")
 		if err != nil {
-			t.Fatal(err)
+			t.Error(err)
 		}
 		name, value, err := readFile("./testdata/env/", info)
 		if err != nil {
-			t.Fatal(err)
+			t.Error(err)
 		}
 		if name != "BAR" {
-			t.Fatalf("Name != BAR %s", name)
+			t.Errorf("Name != BAR %s", name)
 		}
 		if value != "bar" {
-			t.Fatalf("%s!=bar", value)
+			t.Errorf("%s!=bar", value)
 		}
 	})
 	t.Run("readFileFOO", func(t *testing.T) {
 		info, err := os.Stat("./testdata/env/FOO")
 		if err != nil {
-			t.Fatal(err)
+			t.Error(err)
 		}
 		name, value, err := readFile("./testdata/env/", info)
 		if err != nil {
-			t.Fatal(err)
+			t.Error(err)
 		}
 		if name != "FOO" {
-			t.Fatalf("Name != FOO %s", name)
+			t.Errorf("Name != FOO %s", name)
 		}
 		if value != "   foo\nwith new line" {
-			t.Fatalf("WRONG %s!=   foo\nwith new line", value)
+			t.Errorf("WRONG %s!=   foo\nwith new line", value)
+		}
+	})
+	t.Run("readEmptyFile", func(t *testing.T) {
+		info, err := os.Stat("./testdata/env/UNSET")
+		if err != nil {
+			t.Error(err)
+		}
+		name, value, err := readFile("./testdata/env/", info)
+		if err != nil {
+			t.Error(err)
+		}
+		if name != "UNSET" {
+			t.Errorf("Name != FOO %s", name)
+		}
+		if value != "" {
+			t.Errorf("no empty line %s", value)
 		}
 	})
 }

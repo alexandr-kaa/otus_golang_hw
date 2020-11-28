@@ -36,7 +36,7 @@ func ReadDir(dir string) (Environment, error) {
 		}
 		key, value, err := readFile(dir, fileInfo)
 		if err != nil {
-			return nil, fmt.Errorf("ReadDir brings error %w", err)
+			return nil, fmt.Errorf("ReadDir brings error %v", err)
 		}
 		retval[key] = value
 	}
@@ -48,6 +48,9 @@ func readFile(dir string, info os.FileInfo) (fileName string, value string, err 
 	content, err := ioutil.ReadFile(dir + "/" + fileName)
 	if err != nil {
 		return "", "", fmt.Errorf("readFile get error from ioutil.ReadFile %w", err)
+	}
+	if len(content) == 0 {
+		return fileName, "", nil
 	}
 	sliceByte := make([]byte, 4)
 	sizeSliceWritten := utf8.EncodeRune(sliceByte, '\n')
