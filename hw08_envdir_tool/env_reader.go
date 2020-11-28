@@ -1,6 +1,9 @@
 package main
 
 import (
+	"bufio"
+	"bytes"
+	"errors"
 	"fmt"
 	"io/ioutil"
 	"os"
@@ -9,6 +12,11 @@ import (
 )
 
 type Environment map[string]string
+
+var (
+	ErrContainsEq = errors.New("file contains =")
+	ErrDirectory  = errors.New("directory name file")
+)
 
 // ReadDir reads a specified directory and returns map of env variables.
 // Variables represented as files where filename is name of variable, file first line is a value.
@@ -20,6 +28,12 @@ func ReadDir(dir string) (Environment, error) {
 		return nil, fmt.Errorf("ReadDir get error from ioutil.ReadDir %w", err)
 	}
 	for _, fileInfo := range info {
+		if strings.ContainsRune(fileInfo.Name(), '=') {
+			return nil, ErrContainsEq
+		}
+		if fileInfo.IsDir() {
+			return nil, ErrDirectory
+		}
 		key, value, err := readFile(dir, fileInfo)
 		if err != nil {
 			return nil, fmt.Errorf("ReadDir brings error %w", err)
@@ -36,27 +50,24 @@ func readFile(dir string, info os.FileInfo) (fileName string, value string, err 
 		return "", "", fmt.Errorf("readFile get error from ioutil.ReadFile %w", err)
 	}
 	sliceByte := make([]byte, 4)
-	utf8.EncodeRune(sliceByte, '\n')
-
+	sizeSliceWritten := utf8.EncodeRune(sliceByte, '\n')
+	sliceByte = sliceByte[:sizeSliceWritten]
+	zeroslice := make([]byte, 1)
+	reader := bytes.NewReader(content)
+	bufioreader := bufio.NewReader(reader)
 	var builder strings.Builder
-
-	_, err = builder.Write(content)
-	if err != nil {
-		return "", "", fmt.Errorf("readFile get error from string builder write method %w", err)
-	}
-
-	str := strings.Split(builder.String(), "\n")[0]
-
-	builder.Reset()
-
-	for i := 0; i < len(str); i++ {
-		if byteValue := str[i]; byteValue == 0 {
-			_, err = builder.WriteRune('\n')
-		} else {
-			err = builder.WriteByte(byteValue)
-		}
+	for {
+		line, readFine, err := bufioreader.ReadLine()
 		if err != nil {
-			return "", "", fmt.Errorf("readFile get error trying write to string string builder %w", err)
+			return "", "", fmt.Errorf("readFile ReadLine error %w", err)
+		}
+		line = bytes.ReplaceAll(line, zeroslice, sliceByte)
+		_, err = builder.Write(line)
+		if err != nil {
+			return "", "", fmt.Errorf("reafFile string builder failed %w", err)
+		}
+		if !readFine {
+			break
 		}
 	}
 	value = builder.String()

@@ -43,7 +43,7 @@ func TestReadFile(t *testing.T) {
 			t.Fatalf("Name != FOO %s", name)
 		}
 		if value != "   foo\nwith new line" {
-			t.Fatalf("%s!=bar", value)
+			t.Fatalf("WRONG %s!=   foo\nwith new line", value)
 		}
 	})
 }
